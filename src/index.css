@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Sistema visual del proyecto (ver README):
+   - Color principal: cyan-700 (agua)
+   - Fondo de encabezado: slate-900
+   - Fondo de página: slate-50
+   - Tipografía: la del sistema (sans-serif por defecto de Tailwind) */
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
