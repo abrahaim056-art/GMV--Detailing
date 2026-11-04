@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gmv_detailing_movil/screens/inicio_screen.dart';
 import 'package:gmv_detailing_movil/screens/inicio_sesion_screen.dart';
 import 'package:gmv_detailing_movil/screens/new_cuenta_screen.dart';
-
+import 'package:gmv_detailing_movil/screens/loading_screen.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -24,6 +24,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/registro': (context) => const NewCuentaScreen(),
         '/home': (context) => const HomeScreen(),
+        '/loading': (context) => const LoadingScreen(),
       },
     );
   }
