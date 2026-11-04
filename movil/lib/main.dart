@@ -19,13 +19,13 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC89B27)),
         useMaterial3: true,
       ),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/registro': (context) => const NewCuentaScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/loading': (context) => const LoadingScreen(),
-      },
+      initialRoute: '/loading',
+routes: {
+  '/loading': (context) => const LoadingScreen(),
+  '/login': (context) => const LoginScreen(),
+  '/registro': (context) => const NewCuentaScreen(),
+  '/home': (context) => const HomeScreen(),
+},
     );
   }
 }
