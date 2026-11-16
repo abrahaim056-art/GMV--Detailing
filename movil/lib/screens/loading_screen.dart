@@ -45,7 +45,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
               decoration: BoxDecoration(
                 color: Colors.black,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: primaryGold.withOpacity(0.5), width: 1.5),
+                border: Border.all(color: primaryGold.withValues(alpha: 0.5), width: 1.5),
               ),
               child: const Icon(Icons.directions_car, size: 40, color: primaryGold),
             ),
