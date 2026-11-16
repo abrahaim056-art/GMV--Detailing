@@ -1,10 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
-class NewCuentaScreen extends StatelessWidget {
+class NewCuentaScreen extends StatefulWidget {
   const NewCuentaScreen({super.key});
 
+  @override
+  State<NewCuentaScreen> createState() => _NewCuentaScreenState();
+}
+
+class _NewCuentaScreenState extends State<NewCuentaScreen> {
   static const Color primaryGold = Color(0xFFC89B27);
   static const Color darkBackground = Color(0xFF121212);
+
+  final nombreController = TextEditingController();
+  final telefonoController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool obscurePassword = true;
+  bool isLoading = false;
+  String? errorMessage;
+
+  @override
+  void dispose() {
+    nombreController.dispose();
+    telefonoController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
+    if (nombreController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
+        passwordController.text.length < 6) {
+      setState(() => errorMessage = 'Completa los campos (contraseña mínimo 6 caracteres)');
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    final error = await context.read<AuthProvider>().register(
+          nombreController.text.trim(),
+          telefonoController.text.trim(),
+          emailController.text.trim(),
+          passwordController.text,
+        );
+
+    if (!mounted) return;
+    setState(() => isLoading = false);
+
+    if (error == null) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      setState(() => errorMessage = error);
+    }
+  }
+
+  InputDecoration _decoration(String hint, {Widget? suffixIcon}) {
+    return InputDecoration(
+      hintText: hint,
+      filled: true,
+      fillColor: const Color(0xFFF9F9F9),
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,55 +117,76 @@ class NewCuentaScreen extends StatelessWidget {
                       const SizedBox(height: 6),
                       const Text('Solo necesitamos unos datos para agendar tus citas', style: TextStyle(color: Colors.black54, fontSize: 13)),
                       const SizedBox(height: 24),
+
                       const Text('Nombre completo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
                       const SizedBox(height: 8),
                       TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Ej. Carlos Mendoza',
-                          filled: true,
-                          fillColor: const Color(0xFFF9F9F9),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        ),
+                        controller: nombreController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: _decoration('Ej. Carlos Mendoza'),
                       ),
                       const SizedBox(height: 18),
+
                       const Text('Teléfono', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
                       const SizedBox(height: 8),
                       TextField(
+                        controller: telefonoController,
                         keyboardType: TextInputType.phone,
-                        decoration: InputDecoration(
-                          hintText: 'Ej. +52 55 1234 5678',
-                          filled: true,
-                          fillColor: const Color(0xFFF9F9F9),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                        ),
+                        decoration: _decoration('Ej. +52 55 1234 5678'),
                       ),
                       const SizedBox(height: 18),
+
                       const Text('Correo electrónico', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
                       const SizedBox(height: 8),
                       TextField(
+                        controller: emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          hintText: 'carlos.mendoza@',
-                          filled: true,
-                          fillColor: const Color(0xFFF9F9F9),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        decoration: _decoration('carlos.mendoza@correo.com'),
+                      ),
+                      const SizedBox(height: 18),
+
+                      const Text('Contraseña', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: passwordController,
+                        obscureText: obscurePassword,
+                        decoration: _decoration(
+                          'Mínimo 6 caracteres',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              color: Colors.black38,
+                              size: 20,
+                            ),
+                            onPressed: () => setState(() => obscurePassword = !obscurePassword),
+                          ),
                         ),
                       ),
+
+                      if (errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                        ),
+
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: () {
-                            // Al crear cuenta con éxito, lo mandamos directo al Home
-                            Navigator.pushReplacementNamed(context, '/home');
-                          },
+                          onPressed: isLoading ? null : _handleRegister,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryGold,
                             elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
-                          child: const Text('Crear cuenta', style: TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold)),
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                )
+                              : const Text('Crear cuenta', style: TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold)),
                         ),
                       ),
                       const SizedBox(height: 24),

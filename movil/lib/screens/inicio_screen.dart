@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'dart:convert';
+import '../providers/auth_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,26 +27,32 @@ class _HomeScreenState extends State<HomeScreen> {
   // Petición GET al backend de Node.js conectado a MySQL
   Future<void> _obtenerServiciosBackend() async {
     try {
-      // Nota: Si usas emulador Android físico usa 'http://10.0.2.2:3000/api/servicios'
-      // Si usas Chrome o Windows usa 'http://localhost:3000/api/servicios'
+      // Emulador Android: 'http://10.0.2.2:3000/api/servicios'
+      // Chrome o Windows: 'http://localhost:3000/api/servicios'
       final response = await http.get(Uri.parse('http://localhost:3000/api/servicios'));
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         setState(() {
           serviciosList = json.decode(response.body);
           isLoading = false;
         });
+      } else {
+        setState(() => isLoading = false);
       }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+      if (!mounted) return;
+      setState(() => isLoading = false);
       debugPrint('Error conectando al backend: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Lee el estado de sesión; la pantalla se redibuja si cambia
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       body: SafeArea(
@@ -89,10 +97,38 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: const Icon(Icons.notifications_outlined, color: Colors.black54),
                         onPressed: () {},
                       ),
-                      const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: primaryGold,
-                        child: Icon(Icons.person, color: Colors.black, size: 20),
+                      // Avatar: si hay sesión, al tocarlo cierra sesión
+                      GestureDetector(
+                        onTap: () {
+                          if (auth.isLoggedIn) {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Cerrar sesión'),
+                                content: Text('¿Salir de la cuenta ${auth.email ?? ''}?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      context.read<AuthProvider>().logout();
+                                      Navigator.pushReplacementNamed(context, '/login');
+                                    },
+                                    child: const Text('Salir'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        },
+                        child: const CircleAvatar(
+                          radius: 18,
+                          backgroundColor: primaryGold,
+                          child: Icon(Icons.person, color: Colors.black, size: 20),
+                        ),
                       ),
                     ],
                   ),
@@ -100,73 +136,76 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 20),
 
-              // SALUDO
-              const Text('Bienvenido de nuevo', style: TextStyle(color: Colors.grey, fontSize: 13)),
-              const Text('Hola, Invitado', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black)),
+              // SALUDO (cambia según la sesión)
+              Text(
+                auth.isGuest ? 'Bienvenido' : 'Bienvenido de nuevo',
+                style: const TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+              Text(
+                auth.isGuest ? 'Hola, Invitado' : 'Hola, ${auth.nombre ?? ''}',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+              ),
               const SizedBox(height: 20),
 
-              // TARJETA: AVISO MODO INVITADO / PRÓXIMA CITA
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: darkCard,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(radius: 4, backgroundColor: primaryGold),
-                            SizedBox(width: 8),
-                            Text(
-                              'MODO INVITADO',
-                              style: TextStyle(color: primaryGold, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Explora nuestros servicios y precios libremente.',
-                      style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Inicia sesión o regístrate cuando desees agendar una cita o guardar tus vehículos.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color.fromRGBO(255, 255, 255, 0.2)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text('Iniciar sesión / Registrarse', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                            SizedBox(width: 6),
-                            Icon(Icons.login, color: primaryGold, size: 16),
-                          ],
+              // TARJETA MODO INVITADO (solo si es invitado)
+              if (auth.isGuest) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: darkCard,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          CircleAvatar(radius: 4, backgroundColor: primaryGold),
+                          SizedBox(width: 8),
+                          Text(
+                            'MODO INVITADO',
+                            style: TextStyle(color: primaryGold, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Explora nuestros servicios y precios libremente.',
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Inicia sesión o regístrate cuando desees agendar una cita o guardar tus vehículos.',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pushReplacementNamed(context, '/login');
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color.fromRGBO(255, 255, 255, 0.2)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('Iniciar sesión / Registrarse', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                              SizedBox(width: 6),
+                              Icon(Icons.login, color: primaryGold, size: 16),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 25),
+                const SizedBox(height: 25),
+              ],
 
               // SECCIÓN: NUESTROS SERVICIOS (DESDE MYSQL)
               Row(
@@ -243,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
               const SizedBox(height: 20),
 
-              // BANNER DE GARANTIA
+              // BANNER DE GARANTÍA
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(

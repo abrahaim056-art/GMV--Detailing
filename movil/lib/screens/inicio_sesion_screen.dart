@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,10 +13,49 @@ class LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool obscurePassword = true;
-  bool showError = false;
+  bool isLoading = false;
+  String? errorMessage;
 
   static const primaryGold = Color(0xFFC89B27);
   static const darkBackground = Color(0xFF121212);
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => errorMessage = 'Ingresa tu correo y contraseña');
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    final error = await context.read<AuthProvider>().login(email, password);
+
+    if (!mounted) return;
+    setState(() => isLoading = false);
+
+    if (error == null) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      setState(() => errorMessage = error);
+    }
+  }
+
+  void _handleGuest() {
+    context.read<AuthProvider>().loginAsGuest();
+    Navigator.pushReplacementNamed(context, '/home');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +108,7 @@ class LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           hintText: 'cliente@ejemplo.com',
                           filled: true,
@@ -97,35 +139,44 @@ class LoginScreenState extends State<LoginScreen> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
                       ),
+
+                      // MENSAJE DE ERROR
+                      if (errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Text(errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                        ),
+
                       const SizedBox(height: 24),
-                      
+
                       // BOTÓN INICIAR SESIÓN
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(context, '/home');
-                          },
+                          onPressed: isLoading ? null : _handleLogin,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryGold,
                             elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
-                          child: const Text('Iniciar sesión', style: TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold)),
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                )
+                              : const Text('Iniciar sesión', style: TextStyle(color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold)),
                         ),
                       ),
                       const SizedBox(height: 12),
 
-                      // NUEVO: BOTÓN CONTINUAR COMO INVITADO
+                      // BOTÓN CONTINUAR COMO INVITADO
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: OutlinedButton(
-                          onPressed: () {
-                            // Entra al home permitiendo modo invitado
-                            Navigator.pushReplacementNamed(context, '/home');
-                          },
+                          onPressed: isLoading ? null : _handleGuest,
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: primaryGold, width: 1.5),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -142,11 +193,9 @@ class LoginScreenState extends State<LoginScreen> {
                         children: [
                           const Text('¿Aún no tienes cuenta?', style: TextStyle(color: Colors.black54, fontSize: 13)),
                           GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/registro');
-                            },
+                            onTap: () => Navigator.pushNamed(context, '/registro'),
                             child: const Text(
-                              ' Registrate',
+                              ' Regístrate',
                               style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13, decoration: TextDecoration.underline),
                             ),
                           ),
