@@ -1,11 +1,19 @@
 @import "tailwindcss";
-
-/* Sistema visual del proyecto (ver README):
-   - Color principal: cyan-700 (agua)
-   - Fondo de encabezado: slate-900
-   - Fondo de página: slate-50
-   - Tipografía: la del sistema (sans-serif por defecto de Tailwind) */
-body {
-  background-color: #f8fafc;
-  color: #0f172a;
+ 
+/* Sistema visual del proyecto (negro, blanco, dorado, rojo y grises).
+   Es el mismo de la app móvil. Se usan como: bg-gmv-dorado, text-gmv-negro, etc. */
+@theme {
+  --color-gmv-negro: #111111;
+  --color-gmv-dorado: #c9a227;
+  --color-gmv-rojo: #c8102e;
+  --color-gmv-gris: #4a4a4a;
+  --color-gmv-borde: #e5e5e5;
+  --color-gmv-crema: #fbf5df;
+  --color-gmv-rosa: #fadbdf;
 }
+ 
+body {
+  background-color: #f5f5f5;
+  color: #111111;
+}
+ 
