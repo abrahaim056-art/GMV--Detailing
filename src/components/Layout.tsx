@@ -1,33 +1,34 @@
 import { Link, NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
-
+import Logo from "./Logo";
+ 
 interface LayoutProps {
   sesion: boolean;
   onSalir: () => void;
 }
-
+ 
 // Encabezado + navegación + contenido de las páginas internas.
 // Si no hay sesión iniciada, se regresa al inicio de sesión.
 function Layout({ sesion, onSalir }: LayoutProps) {
   const navigate = useNavigate();
-
+ 
   if (!sesion) {
     return <Navigate to="/" replace />;
   }
-
+ 
   function cerrarSesion() {
     onSalir();
     navigate("/");
   }
-
+ 
   function claseEnlace(activo: boolean) {
     const base =
-      "rounded-md px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white";
+      "rounded-xl px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white";
     if (activo) {
-      return base + " bg-cyan-700 text-white";
+      return base + " bg-gmv-dorado font-bold text-gmv-negro";
     }
-    return base + " text-slate-200 hover:bg-slate-700";
+    return base + " text-gray-300 hover:text-white";
   }
-
+ 
   return (
     <div className="min-h-screen">
       <a
@@ -36,16 +37,17 @@ function Layout({ sesion, onSalir }: LayoutProps) {
       >
         Saltar al contenido
       </a>
-
-      <header className="bg-slate-900 text-white">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
+ 
+      <header className="bg-gmv-negro text-white">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-8">
           <Link
             to="/dashboard"
-            className="text-lg font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="flex items-center gap-2 text-lg font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
+            <Logo />
             GMV Detailing Services
           </Link>
-
+ 
           <nav aria-label="Navegación principal" className="flex flex-wrap items-center gap-2">
             <NavLink to="/dashboard" className={({ isActive }) => claseEnlace(isActive)}>
               Dashboard
@@ -59,19 +61,19 @@ function Layout({ sesion, onSalir }: LayoutProps) {
             <button
               type="button"
               onClick={cerrarSesion}
-              className="rounded-md border border-slate-500 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="rounded-xl border border-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Cerrar sesión
             </button>
           </nav>
         </div>
       </header>
-
-      <main id="contenido" className="mx-auto w-full max-w-5xl px-4 py-6">
+ 
+      <main id="contenido" className="mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
         <Outlet />
       </main>
     </div>
   );
 }
-
+ 
 export default Layout;
