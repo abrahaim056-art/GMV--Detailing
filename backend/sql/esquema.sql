@@ -87,10 +87,8 @@ CREATE TABLE IF NOT EXISTS notificaciones (
 
 -- Servicios ficticios (mismos ids que usa el frontend).
 INSERT IGNORE INTO servicios (id, nombre, precio, minutos) VALUES
-  ('lavado-exterior', 'Lavado exterior', 120, 30),
-  ('lavado-completo', 'Lavado completo', 220, 60),
-  ('detallado-interior', 'Detallado interior', 450, 90),
-  ('encerado', 'Encerado', 300, 45),
-  ('pulido', 'Pulido de pintura', 800, 120);
+      ('basico', 'Servicio Básico', 120, 30),
+      ('premium', 'Servicio Premium', 220, 60),
+      ('ejecutivo', 'Servicio Ejecutivo (Detallado)', 800, 120);
 
 -- Pendiente para después: horario del negocio, días no laborables y bahías.
