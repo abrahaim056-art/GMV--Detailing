@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Cita, EstadoCita } from "../types";
 import { calcularTotales, obtenerNombresServicios } from "../data/servicios";
 import { formatearFecha } from "../data/citas";
 import EtiquetaEstado from "../components/EtiquetaEstado";
 import Boton from "../components/Boton";
 import Mensaje from "../components/Mensaje";
+import EnlaceDorado from "../components/EnlaceDorado";
  
 interface DetalleCitaProps {
   citas: Cita[];
@@ -30,9 +31,7 @@ function obtenerSiguientePaso(estado: EstadoCita): { estado: EstadoCita; texto: 
       return null;
   }
 }
- 
-const claseEnlace =
-  "w-fit border-b-2 border-gmv-dorado pb-px text-sm font-bold text-gmv-negro focus:outline-none focus-visible:ring-2 focus-visible:ring-gmv-dorado";
+
  
 function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
   const { id } = useParams();
@@ -46,9 +45,9 @@ function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
     return (
       <div className="flex flex-col items-start gap-3">
         <Mensaje tipo="error" texto="No encontramos esa cita." />
-        <Link to="/citas" className={claseEnlace}>
+        <EnlaceDorado to="/citas" direccion="atras">
           Volver a la agenda
-        </Link>
+        </EnlaceDorado>
       </div>
     );
   }
@@ -69,9 +68,9 @@ function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
  
   return (
     <div className="flex flex-col gap-4">
-      <Link to="/citas" className={claseEnlace}>
+      <EnlaceDorado to="/citas" direccion="atras">
         Volver a la agenda
-      </Link>
+      </EnlaceDorado>
  
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-3xl font-extrabold text-gmv-negro">Cita de {cita.cliente}</h1>

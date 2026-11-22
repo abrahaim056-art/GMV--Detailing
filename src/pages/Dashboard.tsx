@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
 import { Cita } from "../types";
 import { HOY, HOY_TEXTO } from "../data/citas";
 import TarjetaIndicador from "../components/TarjetaIndicador";
 import TarjetaCita from "../components/TarjetaCita";
+import EnlaceDorado from "../components/EnlaceDorado";
  
 interface DashboardProps {
   citas: Cita[];
@@ -66,12 +66,7 @@ function Dashboard({ citas }: DashboardProps) {
           <h2 id="titulo-pendientes" className="text-lg font-bold">
             Pendientes de hoy
           </h2>
-          <Link
-            to="/citas"
-            className="border-b-2 border-gmv-dorado pb-px text-sm font-bold text-gmv-negro focus:outline-none focus-visible:ring-2 focus-visible:ring-gmv-dorado"
-          >
-            Ver toda la agenda
-          </Link>
+          <EnlaceDorado to="/citas">Ver toda la agenda</EnlaceDorado>
         </div>
  
         {primerasPendientes.length === 0 ? (

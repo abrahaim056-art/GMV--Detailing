@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
 import { Cita } from "../types";
 import { obtenerNombresServicios } from "../data/servicios";
 import { formatearFecha } from "../data/citas";
 import EtiquetaEstado from "./EtiquetaEstado";
+import EnlaceDorado from "./EnlaceDorado";
  
 interface TarjetaCitaProps {
   cita: Cita;
@@ -28,13 +28,12 @@ function TarjetaCita({ cita, fila = false }: TarjetaCitaProps) {
   const servicios = obtenerNombresServicios(cita.serviciosIds);
  
   const enlace = (
-    <Link
+    <EnlaceDorado
       to={"/citas/" + cita.id}
-      aria-label={"Ver detalle de la cita de " + cita.cliente}
-      className="w-fit border-b-2 border-gmv-dorado pb-px text-sm font-bold text-gmv-negro focus:outline-none focus-visible:ring-2 focus-visible:ring-gmv-dorado"
+      etiquetaAccesible={"Ver detalle de la cita de " + cita.cliente}
     >
       {fila ? "Ver detalle" : "Ver detalle de la cita"}
-    </Link>
+    </EnlaceDorado>
   );
  
   // Fila ancha: nombre, vehículo, fecha, servicio y enlace en una sola línea.
