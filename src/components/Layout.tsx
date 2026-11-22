@@ -1,4 +1,5 @@
 import { Link, NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
+import Logo from "./Logo";
 
 interface LayoutProps {
   sesion: boolean;
@@ -21,11 +22,11 @@ function Layout({ sesion, onSalir }: LayoutProps) {
 
   function claseEnlace(activo: boolean) {
     const base =
-      "rounded-md px-3 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white";
+      "rounded-xl px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white";
     if (activo) {
-      return base + " bg-cyan-700 text-white";
+      return base + " bg-gmv-dorado font-bold text-gmv-negro";
     }
-    return base + " text-slate-200 hover:bg-slate-700";
+    return base + " text-gray-300 hover:text-white";
   }
 
   return (
@@ -37,12 +38,13 @@ function Layout({ sesion, onSalir }: LayoutProps) {
         Saltar al contenido
       </a>
 
-      <header className="bg-slate-900 text-white">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
+      <header className="bg-gmv-negro text-white">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:px-8">
           <Link
             to="/dashboard"
-            className="text-lg font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="flex items-center gap-2 text-lg font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
+            <Logo />
             GMV Detailing Services
           </Link>
 
@@ -53,13 +55,16 @@ function Layout({ sesion, onSalir }: LayoutProps) {
             <NavLink to="/citas" end className={({ isActive }) => claseEnlace(isActive)}>
               Agenda
             </NavLink>
+            <NavLink to="/servicios" className={({ isActive }) => claseEnlace(isActive)}>
+              Servicios
+            </NavLink>
             <NavLink to="/citas/nueva" className={({ isActive }) => claseEnlace(isActive)}>
               Nueva cita
             </NavLink>
             <button
               type="button"
               onClick={cerrarSesion}
-              className="rounded-md border border-slate-500 px-3 py-2 text-sm font-medium text-slate-100 hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="rounded-xl border border-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Cerrar sesión
             </button>
@@ -67,7 +72,7 @@ function Layout({ sesion, onSalir }: LayoutProps) {
         </div>
       </header>
 
-      <main id="contenido" className="mx-auto w-full max-w-5xl px-4 py-6">
+      <main id="contenido" className="mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
         <Outlet />
       </main>
     </div>

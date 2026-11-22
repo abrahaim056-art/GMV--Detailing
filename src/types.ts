@@ -7,25 +7,47 @@ export type EstadoCita =
   | "Entregado"
   | "No se presentó"
   | "Cancelado";
-
-export type CategoriaVehiculo = "Auto compacto" | "Sedán" | "SUV" | "Camioneta";
-
+ 
+// Catálogo de vehículos: la marca que se elige se guarda en el campo "categoria".
+export type CategoriaVehiculo =
+  | "KIA"
+  | "Ford"
+  | "Chevrolet"
+  | "Subaru"
+  | "Mazda"
+  | "Volkswagen"
+  | "Honda"
+  | "Toyota"
+  | "Hyundai"
+  | "Tesla";
+ 
 export interface Servicio {
   id: string;
   nombre: string;
+  descripcion: string;
   precio: number;
   minutos: number;
 }
-
+ 
 export interface Cita {
   id: number;
   cliente: string;
   telefono: string;
   correo: string;
-  vehiculo: string;
+  vehiculo: string; // marca, modelo y año. Ejemplo: "Toyota Hilux 2019"
   categoria: CategoriaVehiculo;
   serviciosIds: string[];
   fecha: string; // formato AAAA-MM-DD
   hora: string; // formato HH:MM
   estado: EstadoCita;
+  extras?: ServicioExtra[];
+  
 }
+export interface ServicioExtra {
+  id: string;
+  nombre: string;
+  precio: number;
+}
+
+// y dentro de Cita:
+

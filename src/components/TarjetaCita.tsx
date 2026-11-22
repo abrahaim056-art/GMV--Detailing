@@ -1,39 +1,76 @@
 import { Link } from "react-router-dom";
 import { Cita } from "../types";
 import { obtenerNombresServicios } from "../data/servicios";
+import { formatearFecha } from "../data/citas";
 import EtiquetaEstado from "./EtiquetaEstado";
-
+ 
 interface TarjetaCitaProps {
   cita: Cita;
+  fila?: boolean; // true = se muestra como fila ancha (dashboard)
 }
-
-function TarjetaCita({ cita }: TarjetaCitaProps) {
+ 
+interface DatoProps {
+  titulo: string;
+  valor: string;
+}
+ 
+function Dato({ titulo, valor }: DatoProps) {
   return (
-    <article className="flex flex-col gap-2 rounded-lg border border-slate-300 bg-white p-4">
-      <div className="flex items-start justify-between gap-2">
+    <div>
+      <p className="text-xs font-semibold text-gray-500">{titulo}</p>
+      <p className="text-sm text-gmv-negro">{valor}</p>
+    </div>
+  );
+}
+ 
+function TarjetaCita({ cita, fila = false }: TarjetaCitaProps) {
+  const fechaHora = formatearFecha(cita.fecha) + " · " + cita.hora;
+  const servicios = obtenerNombresServicios(cita.serviciosIds);
+ 
+  const enlace = (
+    <Link
+      to={"/citas/" + cita.id}
+      aria-label={"Ver detalle de la cita de " + cita.cliente}
+      className="w-fit border-b-2 border-gmv-dorado pb-px text-sm font-bold text-gmv-negro focus:outline-none focus-visible:ring-2 focus-visible:ring-gmv-dorado"
+    >
+      {fila ? "Ver detalle" : "Ver detalle de la cita"}
+    </Link>
+  );
+ 
+  // Fila ancha: nombre, vehículo, fecha, servicio y enlace en una sola línea.
+  if (fila) {
+    return (
+      <article className="grid gap-3 rounded-2xl border border-gmv-borde bg-white p-5 md:grid-cols-[1.3fr_1.2fr_1fr_1.6fr_auto] md:items-center md:gap-5">
         <div>
-          <h3 className="font-semibold text-slate-900">{cita.cliente}</h3>
-          <p className="text-sm text-slate-700">{cita.vehiculo}</p>
+          <h3 className="mb-2 font-bold text-gmv-negro">{cita.cliente}</h3>
+          <EtiquetaEstado estado={cita.estado} />
         </div>
+        <Dato titulo="Vehículo" valor={cita.vehiculo} />
+        <Dato titulo="Fecha y hora" valor={fechaHora} />
+        <Dato titulo="Servicio" valor={servicios} />
+        {enlace}
+      </article>
+    );
+  }
+ 
+  return (
+    <article className="flex flex-col gap-2 rounded-2xl border border-gmv-borde bg-white p-5">
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="font-bold text-gmv-negro">{cita.cliente}</h3>
         <EtiquetaEstado estado={cita.estado} />
       </div>
-
-      <p className="text-sm text-slate-700">
-        {cita.fecha} a las {cita.hora}
+ 
+      <p className="text-sm leading-6 text-gmv-gris">
+        {cita.vehiculo}
+        <br />
+        {fechaHora}
+        <br />
+        {servicios}
       </p>
-      <p className="text-sm text-slate-700">
-        {obtenerNombresServicios(cita.serviciosIds)}
-      </p>
-
-      <Link
-        to={"/citas/" + cita.id}
-        aria-label={"Ver detalle de la cita de " + cita.cliente}
-        className="mt-2 text-sm font-semibold text-cyan-800 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-700"
-      >
-        Ver detalle de la cita
-      </Link>
+ 
+      <div className="mt-1">{enlace}</div>
     </article>
   );
 }
-
+ 
 export default TarjetaCita;

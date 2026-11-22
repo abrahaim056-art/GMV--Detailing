@@ -2,27 +2,27 @@ interface MensajeProps {
   tipo: "exito" | "error" | "info";
   texto: string;
 }
-
+ 
 // Mensaje que los lectores de pantalla anuncian cuando aparece (aria-live).
 function Mensaje({ tipo, texto }: MensajeProps) {
   let colores = "";
   if (tipo === "exito") {
-    colores = "border-emerald-700 bg-emerald-50 text-emerald-900";
+    colores = "border-gmv-dorado bg-gmv-crema text-gmv-negro";
   } else if (tipo === "error") {
-    colores = "border-red-700 bg-red-50 text-red-900";
+    colores = "border-gmv-rojo bg-gmv-rosa text-gmv-rojo";
   } else {
-    colores = "border-sky-700 bg-sky-50 text-sky-900";
+    colores = "border-gmv-gris bg-gray-100 text-gmv-negro";
   }
-
+ 
   return (
     <div
       role={tipo === "error" ? "alert" : "status"}
       aria-live={tipo === "error" ? "assertive" : "polite"}
-      className={"rounded-md border-l-4 p-3 text-sm " + colores}
+      className={"rounded-lg border-l-4 p-3 text-sm font-semibold " + colores}
     >
       {texto}
     </div>
   );
 }
-
+ 
 export default Mensaje;

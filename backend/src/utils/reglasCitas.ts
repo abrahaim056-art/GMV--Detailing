@@ -1,7 +1,18 @@
 import { EstadoCita, NuevaCita } from "../types/cita";
 
-export const categoriasValidas: string[] = ["Auto compacto", "Sedán", "SUV", "Camioneta"];
-
+ export const categoriasValidas: string[] = [
+      "KIA",
+      "Ford",
+      "Chevrolet",
+      "Subaru",
+      "Mazda",
+      "Volkswagen",
+      "Honda",
+      "Toyota",
+      "Hyundai",
+      "Tesla",
+    ];
+    
 export const estadosValidos: string[] = [
   "Agendado",
   "Recibido",

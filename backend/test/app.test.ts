@@ -47,8 +47,8 @@ describe("Reglas de negocio", () => {
       telefono: "",
       correo: "",
       vehiculo: "Aveo",
-      categoria: "Sedán",
-      serviciosIds: ["pulido"],
+      categoria: "Toyota",
+      serviciosIds: ["ejecutivo"],
       fecha: "2026-10-27",
       hora: "10:00",
     });

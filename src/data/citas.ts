@@ -1,8 +1,9 @@
 import { Cita } from "../types";
-
+ 
 // Fecha "de hoy" fija para que la demostración siempre se vea igual.
 export const HOY = "2026-10-27";
-
+export const HOY_TEXTO = "27 de octubre de 2026";
+ 
 export const horarios: string[] = [
   "09:00",
   "10:00",
@@ -14,19 +15,19 @@ export const horarios: string[] = [
   "16:00",
   "17:00",
 ];
-
+ 
 export const citasIniciales: Cita[] = [
   {
     id: 1,
     cliente: "Carlos Ramírez",
     telefono: "998 111 2233",
     correo: "carlos@correo.com",
-    vehiculo: "Nissan Versa 2020",
-    categoria: "Sedán",
-    serviciosIds: ["lavado-completo"],
+    vehiculo: "Toyota Hilux 2019",
+    categoria: "Toyota",
+    serviciosIds: ["premium"],
     fecha: HOY,
     hora: "09:00",
-    estado: "Entregado",
+    estado: "Agendado",
   },
   {
     id: 2,
@@ -34,8 +35,8 @@ export const citasIniciales: Cita[] = [
     telefono: "998 222 3344",
     correo: "",
     vehiculo: "Honda CR-V 2022",
-    categoria: "SUV",
-    serviciosIds: ["detallado-interior", "encerado"],
+    categoria: "Honda",
+    serviciosIds: ["ejecutivo"],
     fecha: HOY,
     hora: "10:00",
     estado: "En proceso",
@@ -43,25 +44,25 @@ export const citasIniciales: Cita[] = [
   {
     id: 3,
     cliente: "Jorge Herrera",
-    telefono: "",
+    telefono: "998 333 4455",
     correo: "jorge@correo.com",
-    vehiculo: "Toyota Hilux 2019",
-    categoria: "Camioneta",
-    serviciosIds: ["lavado-exterior"],
+    vehiculo: "Ford Ranger 2020",
+    categoria: "Ford",
+    serviciosIds: ["basico"],
     fecha: HOY,
-    hora: "11:00",
-    estado: "Terminado",
+    hora: "11:30",
+    estado: "Recibido",
   },
   {
     id: 4,
     cliente: "Ana Torres",
     telefono: "998 444 5566",
     correo: "ana@correo.com",
-    vehiculo: "Chevrolet Aveo 2018",
-    categoria: "Auto compacto",
-    serviciosIds: ["lavado-completo", "encerado"],
+    vehiculo: "Chevrolet Onix 2022",
+    categoria: "Chevrolet",
+    serviciosIds: ["basico"],
     fecha: HOY,
-    hora: "12:00",
+    hora: "13:00",
     estado: "Agendado",
   },
   {
@@ -70,26 +71,26 @@ export const citasIniciales: Cita[] = [
     telefono: "998 555 6677",
     correo: "",
     vehiculo: "Mazda CX-5 2021",
-    categoria: "SUV",
-    serviciosIds: ["pulido"],
+    categoria: "Mazda",
+    serviciosIds: ["premium"],
     fecha: HOY,
-    hora: "13:00",
+    hora: "14:30",
     estado: "No se presentó",
   },
   {
     id: 6,
-    cliente: "Sofía Castillo",
+    cliente: "Pedro Sánchez",
     telefono: "998 666 7788",
-    correo: "sofia@correo.com",
-    vehiculo: "Kia Rio 2023",
-    categoria: "Sedán",
-    serviciosIds: ["lavado-exterior"],
-    fecha: "2026-10-28",
-    hora: "10:00",
-    estado: "Agendado",
+    correo: "pedro@correo.com",
+    vehiculo: "Volkswagen Golf 2021",
+    categoria: "Volkswagen",
+    serviciosIds: ["premium"],
+    fecha: HOY,
+    hora: "16:00",
+    estado: "Terminado",
   },
 ];
-
+ 
 // Regla de negocio 1: un horario está ocupado si la cita sigue vigente.
 // Las citas canceladas o no presentadas liberan su horario.
 export function citaOcupaHorario(cita: Cita): boolean {
@@ -100,4 +101,11 @@ export function citaOcupaHorario(cita: Cita): boolean {
     return false;
   }
   return true;
+}
+ 
+// Convierte "2026-10-27" en "27 oct".
+export function formatearFecha(fecha: string): string {
+  const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const partes = fecha.split("-");
+  return Number(partes[2]) + " " + meses[Number(partes[1]) - 1];
 }
