@@ -66,9 +66,9 @@ function ServicioExtraPagina({ extras, onAgregar, onQuitar }: ServicioExtraProps
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-3xl font-extrabold text-gmv-negro">Servicios extra</h1>
+        <h1 className="text-3xl font-extrabold text-gmv-negro">Servicios extra e individuales</h1>
         <p className="text-gmv-gris">
-          Los servicios que agregues aquí se pueden sumar a cualquier cita nueva.
+          Estos servicios se pueden sumar a un paquete como extra, o elegirse solos en una cita sin paquete.
         </p>
       </div>
 

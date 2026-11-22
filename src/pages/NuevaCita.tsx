@@ -14,6 +14,9 @@ interface NuevaCitaProps {
   onGuardar: (cita: Cita) => void;
 }
 
+// Opción "sin paquete": el cliente solo quiere uno o varios servicios sueltos.
+const SOLO_INDIVIDUALES = "individual";
+
 interface Errores {
   cliente?: string;
   contacto?: string;
@@ -77,6 +80,8 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
     }
     if (servicioElegido === "") {
       nuevosErrores.servicio = "Selecciona un servicio.";
+    } else if (esIndividual && extrasSeleccionados.length === 0) {
+      nuevosErrores.servicio = "Marca al menos un servicio individual.";
     }
 
     if (fecha === "") {
@@ -132,7 +137,7 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
       correo: correo.trim(),
       vehiculo: marca + " " + modelo.trim(),
       categoria: marca as CategoriaVehiculo,
-      serviciosIds: [servicioElegido],
+      serviciosIds: esIndividual ? [] : [servicioElegido],
       // Se guarda una copia (nombre y precio) para que la cita no cambie
       // si después el extra se quita del catálogo.
       extras: extrasSeleccionados,
@@ -146,17 +151,24 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
     setGuardada(true);
   }
 
+  const esIndividual = servicioElegido === SOLO_INDIVIDUALES;
+
   // Solo cuenta los extras que siguen existiendo en el catálogo.
   const extrasSeleccionados = extras.filter((extra) => extrasElegidos.includes(extra.id));
   const totalExtras = calcularTotalExtras(extrasSeleccionados);
 
   const cantidadErrores = Object.keys(errores).length;
-  const totales = calcularTotales(servicioElegido === "" ? [] : [servicioElegido]);
+  const totales = calcularTotales(servicioElegido === "" || esIndividual ? [] : [servicioElegido]);
   const totalCita = totales.precio + totalExtras;
-  const textoServicio = servicioElegido === "" ? "—" : obtenerNombresServicios([servicioElegido]);
+  let textoServicio = "—";
+  if (esIndividual) {
+    textoServicio = "Solo servicios individuales";
+  } else if (servicioElegido !== "") {
+    textoServicio = obtenerNombresServicios([servicioElegido]);
+  }
   const textoVehiculo = marca === "" && modelo.trim() === "" ? "—" : (marca + " " + modelo).trim();
   const textoFecha = hora === "" ? "—" : formatearFecha(fecha) + " · " + hora;
-  const textoDuracion = servicioElegido === "" ? "—" : totales.minutos + " min";
+  const textoDuracion = servicioElegido === "" || esIndividual ? "—" : totales.minutos + " min";
 
   return (
     <div className="flex flex-col gap-4">
@@ -266,6 +278,29 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
                 );
               })}
             </div>
+
+            {/* Sin paquete: solo servicios sueltos */}
+            <label
+              htmlFor="servicio-individual"
+              className={
+                "mt-3 block cursor-pointer rounded-2xl border-2 border-dashed p-4 focus-within:ring-2 focus-within:ring-gmv-dorado " +
+                (esIndividual ? "border-gmv-dorado bg-gmv-dorado/10" : "border-gray-300 bg-white")
+              }
+            >
+              <input
+                id="servicio-individual"
+                type="radio"
+                name="servicio"
+                checked={esIndividual}
+                onChange={() => setServicioElegido(SOLO_INDIVIDUALES)}
+                className="sr-only"
+              />
+              <span className="block text-sm font-bold">Solo servicios individuales</span>
+              <span className="block text-xs text-gmv-gris">
+                Sin paquete: el cliente solo quiere uno o varios servicios sueltos, como aspirado o pintado.
+              </span>
+            </label>
+
             {errores.servicio && (
               <p className="mt-1 text-sm font-semibold text-gmv-rojo">{errores.servicio}</p>
             )}
@@ -275,7 +310,10 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
           {servicioElegido !== "" && (
             <fieldset>
               <legend className="mb-1.5 text-sm font-semibold">
-                Servicios extra <span className="font-normal text-gray-500">(opcional)</span>
+                {esIndividual ? "Servicios individuales" : "Servicios extra"}{" "}
+                <span className="font-normal text-gray-500">
+                  {esIndividual ? "(elige uno o más)" : "(opcional)"}
+                </span>
               </legend>
 
               {extras.length === 0 ? (
@@ -437,7 +475,9 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
             </div>
             {extrasSeleccionados.length > 0 && (
               <div>
-                <dt className="text-gray-400">Extras</dt>
+                <dt className="text-gray-400">
+                  {esIndividual ? "Servicios individuales" : "Extras"}
+                </dt>
                 {extrasSeleccionados.map((extra) => (
                   <dd key={extra.id} className="flex justify-between font-bold">
                     <span>{extra.nombre}</span>
