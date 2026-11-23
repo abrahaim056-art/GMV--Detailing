@@ -19,6 +19,16 @@ const opcionesEstado: string[] = [
   "Cancelado",
 ];
  
+// Quita acentos, mayúsculas y espacios de más para comparar textos.
+// Así "lopez", "López" y "  LÓPEZ " cuentan como lo mismo.
+function normalizar(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 function Agenda({ citas }: AgendaProps) {
   const [cargando, setCargando] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
@@ -35,7 +45,11 @@ function Agenda({ citas }: AgendaProps) {
  
   const citasFiltradas = citas.filter((cita) => {
     const coincideEstado = filtroEstado === "Todos" || cita.estado === filtroEstado;
-    const coincideNombre = cita.cliente.toLowerCase().includes(busqueda.toLowerCase());
+    // Cada palabra escrita debe aparecer en el nombre completo (nombre o apellido,
+    // en cualquier orden y sin importar los acentos).
+    const nombreCliente = normalizar(cita.cliente);
+    const palabras = normalizar(busqueda).split(/\s+/).filter(Boolean);
+    const coincideNombre = palabras.every((palabra) => nombreCliente.includes(palabra));
     return coincideEstado && coincideNombre;
   });
  
@@ -62,7 +76,7 @@ function Agenda({ citas }: AgendaProps) {
       >
         <div>
           <label htmlFor="busqueda" className="mb-1.5 block text-sm font-semibold">
-            Buscar por nombre del cliente
+            Buscar cliente
           </label>
           <input
             id="busqueda"
