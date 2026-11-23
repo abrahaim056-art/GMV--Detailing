@@ -35,6 +35,10 @@ function App() {
     setExtras([...extras, nuevoExtra]);
   }
 
+  function editarExtra(extraEditado: ServicioExtra) {
+    setExtras(extras.map((extra) => (extra.id === extraEditado.id ? extraEditado : extra)));
+  }
+
   function quitarExtra(id: string) {
     setExtras(extras.filter((extra) => extra.id !== id));
   }
@@ -60,6 +64,7 @@ function App() {
             <ServicioExtraPagina
               extras={extras}
               onAgregar={agregarExtra}
+              onEditar={editarExtra}
               onQuitar={quitarExtra}
             />
           }

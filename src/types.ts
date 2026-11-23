@@ -47,6 +47,7 @@ export interface ServicioExtra {
   id: string;
   nombre: string;
   precio: number;
+  minutos: number;
 }
 
 // y dentro de Cita:
