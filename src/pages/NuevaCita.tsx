@@ -1,9 +1,9 @@
 import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
-import { Cita, CategoriaVehiculo, ServicioExtra } from "../types";
-import { calcularTotales, marcas, obtenerNombresServicios, servicios } from "../data/servicios";
-import { calcularMinutosExtras, calcularTotalExtras } from "../data/extras";
+import { Cita, CategoriaVehiculo, Servicio } from "../types";
+import { marcas, sumarServicios } from "../data/servicios";
 import { HOY, citaOcupaHorario, formatearFecha, horarios } from "../data/citas";
+import { DatosNuevaCita } from "../services/citasApi";
 import CampoTexto from "../components/CampoTexto";
 import Boton from "../components/Boton";
 import Mensaje from "../components/Mensaje";
@@ -11,8 +11,8 @@ import EnlaceDorado from "../components/EnlaceDorado";
 
 interface NuevaCitaProps {
   citas: Cita[];
-  extras: ServicioExtra[]; // catálogo de servicios extra (se administra en /servicios)
-  onGuardar: (cita: Cita) => void;
+  servicios: Servicio[]; // catálogo que viene de la base de datos
+  onGuardar: (datos: DatosNuevaCita) => Promise<void>;
 }
 
 // Opción "sin paquete": el cliente solo quiere uno o varios servicios sueltos.
@@ -28,7 +28,7 @@ interface Errores {
   hora?: string;
 }
 
-function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
+function NuevaCita({ citas, servicios, onGuardar }: NuevaCitaProps) {
   const [cliente, setCliente] = useState("");
   const [telefono, setTelefono] = useState("");
   const [correo, setCorreo] = useState("");
@@ -40,6 +40,17 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
   const [hora, setHora] = useState("");
   const [errores, setErrores] = useState<Errores>({});
   const [guardada, setGuardada] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [errorApi, setErrorApi] = useState("");
+
+  // El catálogo se separa en paquetes y servicios sueltos.
+  const paquetes = servicios.filter((servicio) => servicio.tipo === "paquete");
+  const extras = servicios.filter((servicio) => servicio.tipo === "extra");
+
+  const esIndividual = servicioElegido === SOLO_INDIVIDUALES;
+  const paqueteElegido = paquetes.find((paquete) => paquete.id === servicioElegido);
+  // Solo cuenta los servicios sueltos que siguen existiendo en el catálogo.
+  const extrasSeleccionados = extras.filter((extra) => extrasElegidos.includes(extra.id));
 
   // Regla de negocio 1: un horario está ocupado si otra cita vigente lo usa ese día.
   function horarioOcupado(horario: string): boolean {
@@ -51,7 +62,7 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
     return false;
   }
 
-  // Marca o desmarca un servicio extra.
+  // Marca o desmarca un servicio suelto.
   function alternarExtra(id: string) {
     if (extrasElegidos.includes(id)) {
       setExtrasElegidos(extrasElegidos.filter((e) => e !== id));
@@ -83,6 +94,8 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
       nuevosErrores.servicio = "Selecciona un servicio.";
     } else if (esIndividual && extrasSeleccionados.length === 0) {
       nuevosErrores.servicio = "Marca al menos un servicio individual.";
+    } else if (!esIndividual && !paqueteElegido) {
+      nuevosErrores.servicio = "Ese servicio ya no está disponible. Elige otro.";
     }
 
     if (fecha === "") {
@@ -112,9 +125,10 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
     setHora("");
   }
 
-  function manejarEnvio(evento: FormEvent<HTMLFormElement>) {
+  async function manejarEnvio(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     setGuardada(false);
+    setErrorApi("");
 
     const erroresEncontrados = validar();
     setErrores(erroresEncontrados);
@@ -123,56 +137,65 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
       return;
     }
 
-    // Se calcula el siguiente id a partir del más grande que existe.
-    let mayorId = 0;
-    for (const cita of citas) {
-      if (cita.id > mayorId) {
-        mayorId = cita.id;
-      }
+    // El paquete (si hay) y los servicios sueltos se mandan juntos en serviciosIds.
+    const idsServicios: string[] = [];
+    if (!esIndividual) {
+      idsServicios.push(servicioElegido);
+    }
+    for (const extra of extrasSeleccionados) {
+      idsServicios.push(extra.id);
     }
 
-    const nuevaCita: Cita = {
-      id: mayorId + 1,
+    const datos: DatosNuevaCita = {
       cliente: cliente.trim(),
       telefono: telefono.trim(),
       correo: correo.trim(),
       vehiculo: marca + " " + modelo.trim(),
       categoria: marca as CategoriaVehiculo,
-      serviciosIds: esIndividual ? [] : [servicioElegido],
-      // Se guarda una copia (nombre y precio) para que la cita no cambie
-      // si después el extra se quita del catálogo.
-      extras: extrasSeleccionados,
+      serviciosIds: idsServicios,
       fecha: fecha,
       hora: hora,
-      estado: "Agendado",
     };
 
-    onGuardar(nuevaCita);
-    limpiarFormulario();
-    setGuardada(true);
+    // La cita se guarda en la API (POST /api/citas). El éxito solo se muestra si respondió bien.
+    setGuardando(true);
+    try {
+      await onGuardar(datos);
+      limpiarFormulario();
+      setGuardada(true);
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorApi(error.message);
+      } else {
+        setErrorApi("No se pudo guardar la cita.");
+      }
+    }
+    setGuardando(false);
   }
 
-  const esIndividual = servicioElegido === SOLO_INDIVIDUALES;
-
-  // Solo cuenta los extras que siguen existiendo en el catálogo.
-  const extrasSeleccionados = extras.filter((extra) => extrasElegidos.includes(extra.id));
-  const totalExtras = calcularTotalExtras(extrasSeleccionados);
-  const minutosExtras = calcularMinutosExtras(extrasSeleccionados);
-
   const cantidadErrores = Object.keys(errores).length;
-  const totales = calcularTotales(servicioElegido === "" || esIndividual ? [] : [servicioElegido]);
-  const totalCita = totales.precio + totalExtras;
+
+  // Totales: el paquete elegido (si hay) más los servicios sueltos marcados.
+  const elegidos: Servicio[] = [];
+  if (paqueteElegido) {
+    elegidos.push(paqueteElegido);
+  }
+  for (const extra of extrasSeleccionados) {
+    elegidos.push(extra);
+  }
+  const totales = sumarServicios(elegidos);
+  const totalCita = totales.precio;
+
   let textoServicio = "—";
   if (esIndividual) {
     textoServicio = "Solo servicios individuales";
-  } else if (servicioElegido !== "") {
-    textoServicio = obtenerNombresServicios([servicioElegido]);
+  } else if (paqueteElegido) {
+    textoServicio = paqueteElegido.nombre;
   }
   const textoVehiculo = marca === "" && modelo.trim() === "" ? "—" : (marca + " " + modelo).trim();
   const textoFecha = hora === "" ? "—" : formatearFecha(fecha) + " · " + hora;
-  // Duración aproximada: paquete (si hay) + minutos de los servicios marcados.
-  const minutosTotales = totales.minutos + minutosExtras;
-  const textoDuracion = minutosTotales === 0 ? "—" : "aprox. " + minutosTotales + " min";
+  // Duración aproximada: paquete (si hay) + minutos de los servicios sueltos marcados.
+  const textoDuracion = totales.minutos === 0 ? "—" : "aprox. " + totales.minutos + " min";
 
   return (
     <div className="flex flex-col gap-4">
@@ -189,6 +212,8 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
           <EnlaceDorado to="/citas">Ir a la agenda</EnlaceDorado>
         </div>
       )}
+
+      {errorApi && <Mensaje tipo="error" texto={errorApi} />}
 
       {cantidadErrores > 0 && (
         <Mensaje
@@ -236,9 +261,9 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
               Servicio <span className="font-normal text-gray-500">(elige uno)</span>
             </legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {servicios.map((servicio, indice) => {
+              {paquetes.map((servicio, indice) => {
                 const elegido = servicioElegido === servicio.id;
-                const oscuro = indice === servicios.length - 1; // el Ejecutivo es negro
+                const oscuro = indice === paquetes.length - 1 && paquetes.length > 1; // el último paquete es negro
 
                 let borde = "border-gmv-borde";
                 if (oscuro) borde = "border-gmv-negro";
@@ -457,7 +482,9 @@ function NuevaCita({ citas, extras, onGuardar }: NuevaCitaProps) {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Boton type="submit">Guardar cita</Boton>
+            <Boton type="submit" disabled={guardando}>
+              {guardando ? "Guardando..." : "Guardar cita"}
+            </Boton>
             <Link
               to="/citas"
               className="rounded-xl border-2 border-gray-300 bg-white px-5 py-3 text-sm font-bold text-gmv-negro hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gmv-dorado"

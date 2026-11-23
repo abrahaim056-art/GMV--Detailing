@@ -23,12 +23,17 @@ CREATE TABLE IF NOT EXISTS vehiculos (
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
--- Catálogo de servicios.
+-- Catálogo de servicios. "tipo" distingue los paquetes de los servicios sueltos
+-- (extras que se suman a un paquete o se piden solos). Al quitar un servicio se
+-- pone activo = FALSE en vez de borrarlo, para no perder el historial de las citas.
 CREATE TABLE IF NOT EXISTS servicios (
   id VARCHAR(50) PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
+  descripcion VARCHAR(255) NOT NULL DEFAULT '',
   precio DECIMAL(10, 2) NOT NULL,
-  minutos INT NOT NULL
+  minutos INT NOT NULL,
+  tipo ENUM('paquete', 'extra') NOT NULL DEFAULT 'extra',
+  activo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Agenda. Si la cita la registró el encargado para alguien sin cuenta
@@ -85,10 +90,15 @@ CREATE TABLE IF NOT EXISTS notificaciones (
   FOREIGN KEY (cita_id) REFERENCES citas(id) ON DELETE SET NULL
 );
 
--- Servicios ficticios (mismos ids que usa el frontend).
-INSERT IGNORE INTO servicios (id, nombre, precio, minutos) VALUES
-      ('basico', 'Servicio Básico', 120, 30),
-      ('premium', 'Servicio Premium', 220, 60),
-      ('ejecutivo', 'Servicio Ejecutivo (Detallado)', 800, 120);
+-- Datos de prueba: 3 paquetes y 5 servicios sueltos.
+INSERT IGNORE INTO servicios (id, nombre, descripcion, precio, minutos, tipo) VALUES
+  ('basico', 'Servicio Básico', 'Lavado exterior, secado a mano y llantas', 120, 30, 'paquete'),
+  ('premium', 'Servicio Premium', 'Lavado completo, aspirado, vidrios y aromatizante', 220, 60, 'paquete'),
+  ('ejecutivo', 'Servicio Ejecutivo (Detallado)', 'Detallado interior, encerado y pulido de pintura', 800, 120, 'paquete'),
+  ('limpieza-de-motor', 'Limpieza de motor', '', 150, 30, 'extra'),
+  ('aromatizante-premium', 'Aromatizante premium', '', 60, 5, 'extra'),
+  ('proteccion-de-llantas', 'Protección de llantas', '', 90, 15, 'extra'),
+  ('limpieza-de-vidrios', 'Limpieza de vidrios', '', 60, 10, 'extra'),
+  ('aspirado-interior', 'Aspirado interior', '', 100, 20, 'extra');
 
 -- Pendiente para después: horario del negocio, días no laborables y bahías.

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { Cita, EstadoCita } from "../types";
-import { calcularTotales, obtenerNombresServicios } from "../data/servicios";
 import { formatearFecha } from "../data/citas";
 import EtiquetaEstado from "../components/EtiquetaEstado";
 import Boton from "../components/Boton";
@@ -10,7 +9,7 @@ import EnlaceDorado from "../components/EnlaceDorado";
  
 interface DetalleCitaProps {
   citas: Cita[];
-  onCambiarEstado: (id: number, nuevoEstado: EstadoCita) => void;
+  onCambiarEstado: (id: number, nuevoEstado: EstadoCita) => Promise<void>;
 }
  
 // Pasos normales del flujo (los mismos de la app móvil).
@@ -36,6 +35,8 @@ function obtenerSiguientePaso(estado: EstadoCita): { estado: EstadoCita; texto: 
 function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
   const { id } = useParams();
   const [mensaje, setMensaje] = useState("");
+  const [errorApi, setErrorApi] = useState("");
+  const [guardando, setGuardando] = useState(false);
   // Guarda el estado que se quiere aplicar mientras se espera la confirmación.
   const [cambioPendiente, setCambioPendiente] = useState<EstadoCita | null>(null);
  
@@ -54,16 +55,28 @@ function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
  
   const siguientePaso = obtenerSiguientePaso(cita.estado);
   const pasoActual = pasosDelFlujo.indexOf(cita.estado); // -1 si no sigue el flujo normal
-  const totales = calcularTotales(cita.serviciosIds);
  
   // Regla de negocio 3: solo se puede cancelar o marcar inasistencia antes de recibir el vehículo.
   const puedeCancelar = cita.estado === "Agendado";
  
-  function aplicarCambio(nuevoEstado: EstadoCita) {
+  // Cambia el estado en la API. El mensaje de éxito solo sale si la API respondió bien.
+  async function aplicarCambio(nuevoEstado: EstadoCita) {
     if (!cita) return;
-    onCambiarEstado(cita.id, nuevoEstado);
-    setMensaje('La cita de ' + cita.cliente + ' ahora está en estado "' + nuevoEstado + '".');
+    setMensaje("");
+    setErrorApi("");
+    setGuardando(true);
+    try {
+      await onCambiarEstado(cita.id, nuevoEstado);
+      setMensaje('La cita de ' + cita.cliente + ' ahora está en estado "' + nuevoEstado + '".');
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorApi(error.message);
+      } else {
+        setErrorApi("No se pudo cambiar el estado.");
+      }
+    }
     setCambioPendiente(null);
+    setGuardando(false);
   }
  
   return (
@@ -78,6 +91,7 @@ function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
       </div>
  
       {mensaje && <Mensaje tipo="exito" texto={mensaje} />}
+      {errorApi && <Mensaje tipo="error" texto={errorApi} />}
  
       <div className="grid items-start gap-6 lg:grid-cols-[1.7fr_1fr]">
         <div className="flex flex-col gap-5">
@@ -92,18 +106,29 @@ function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
               <div>
                 <dt className="text-xs font-semibold text-gray-500">Fecha y hora</dt>
                 <dd className="font-medium">
-                  {formatearFecha(cita.fecha)} 2026 · {cita.hora}
+                  {formatearFecha(cita.fecha)} {cita.fecha.slice(0, 4)} · {cita.hora}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs font-semibold text-gray-500">Vehículo</dt>
                 <dd className="font-medium">{cita.vehiculo}</dd>
               </div>
-              <div>
-                <dt className="text-xs font-semibold text-gray-500">Servicio</dt>
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-semibold text-gray-500">Servicios</dt>
                 <dd className="font-medium">
-                  {obtenerNombresServicios(cita.serviciosIds)} · {totales.minutos} min · $
-                  {totales.precio}
+                  <ul className="flex flex-col gap-1">
+                    {cita.servicios.map((servicio) => (
+                      <li key={servicio.id} className="flex justify-between gap-4">
+                        <span>{servicio.nombre}</span>
+                        <span>
+                          ${servicio.precio} · {servicio.minutos} min
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 border-t border-gmv-borde pt-2 font-bold">
+                    Total: ${cita.total} · aprox. {cita.minutos} min
+                  </p>
                 </dd>
               </div>
               <div>
@@ -172,7 +197,11 @@ function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
           {cambioPendiente === null && (
             <div className="flex flex-col gap-3">
               {siguientePaso && (
-                <Boton anchoCompleto onClick={() => aplicarCambio(siguientePaso.estado)}>
+                <Boton
+                  anchoCompleto
+                  disabled={guardando}
+                  onClick={() => aplicarCambio(siguientePaso.estado)}
+                >
                   {siguientePaso.texto}
                 </Boton>
               )}
@@ -181,6 +210,7 @@ function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
                   <Boton
                     variante="secundario"
                     anchoCompleto
+                    disabled={guardando}
                     onClick={() => setCambioPendiente("No se presentó")}
                   >
                     Marcar como no se presentó
@@ -188,6 +218,7 @@ function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
                   <Boton
                     variante="contornoPeligro"
                     anchoCompleto
+                    disabled={guardando}
                     onClick={() => setCambioPendiente("Cancelado")}
                   >
                     Cancelar cita
@@ -210,7 +241,11 @@ function DetalleCita({ citas, onCambiarEstado }: DetalleCitaProps) {
                 Esta acción libera el horario.
               </p>
               <div className="flex flex-wrap gap-2">
-                <Boton variante="peligro" onClick={() => aplicarCambio(cambioPendiente)}>
+                <Boton
+                  variante="peligro"
+                  disabled={guardando}
+                  onClick={() => aplicarCambio(cambioPendiente)}
+                >
                   Sí, confirmar
                 </Boton>
                 <Boton variante="secundario" onClick={() => setCambioPendiente(null)}>

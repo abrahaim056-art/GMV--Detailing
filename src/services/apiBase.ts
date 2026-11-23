@@ -18,18 +18,29 @@ export async function pedir<T>(ruta: string, opciones?: RequestInit): Promise<T>
     encabezados["Authorization"] = "Bearer " + token;
   }
 
-  const respuesta = await fetch(URL_API + ruta, {
-    ...opciones,
-    headers: encabezados,
-  });
+  let respuesta: Response;
+  try {
+    respuesta = await fetch(URL_API + ruta, {
+      ...opciones,
+      headers: encabezados,
+    });
+  } catch (error) {
+    // La API está apagada o no se alcanza: nunca se debe mostrar un éxito falso.
+    throw new Error("No se pudo conectar con el servidor. Revisa que la API esté encendida.");
+  }
 
-  const datos = await respuesta.json();
+  let datos: any = null;
+  try {
+    datos = await respuesta.json();
+  } catch (error) {
+    datos = null;
+  }
 
   if (!respuesta.ok) {
     let mensaje = "Ocurrió un error.";
-    if (datos.errores) {
+    if (datos && datos.errores) {
       mensaje = datos.errores.join(" ");
-    } else if (datos.mensaje) {
+    } else if (datos && datos.mensaje) {
       mensaje = datos.mensaje;
     }
     throw new Error(mensaje);

@@ -9,7 +9,12 @@ import { manejadorErrores, rutaNoEncontrada } from "./middleware/manejadorErrore
 
 const app = express();
 
-app.use(cors());
+// CORS: si existe CORS_ORIGIN en el .env solo se aceptan esos orígenes (separados por coma).
+// Si no existe, se acepta cualquiera (cómodo en desarrollo).
+const origenes = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((origen) => origen.trim())
+  : true;
+app.use(cors({ origin: origenes }));
 app.use(express.json());
 
 app.get("/api/salud", (req, res) => {

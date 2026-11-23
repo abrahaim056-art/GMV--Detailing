@@ -1,6 +1,6 @@
 import { ResultSetHeader, RowDataPacket } from "mysql2";
 import { pool } from "../config/database";
-import { Cita, DatosCitaNueva, EstadoCita } from "../types/cita";
+import { Cita, DatosCitaNueva, EstadoCita, ServicioDeCita } from "../types/cita";
 
 interface FilaCita extends RowDataPacket {
   id: number;
@@ -40,10 +40,60 @@ function convertirFila(fila: FilaCita): Cita {
     vehiculo: fila.vehiculo,
     categoria: fila.categoria,
     serviciosIds: serviciosIds,
+    servicios: [],
+    total: 0,
+    minutos: 0,
     fecha: fila.fecha,
     hora: fila.hora.slice(0, 5), // "09:00:00" -> "09:00"
     estado: fila.estado,
   };
+}
+
+interface FilaServicioDeCita extends RowDataPacket {
+  cita_id: number;
+  servicio_id: string;
+  nombre: string;
+  minutos: number;
+  precio_aplicado: string;
+}
+
+// Agrega a cada cita el detalle de sus servicios (nombre, precio cobrado y tiempo)
+// y los totales. Se hace con una sola consulta para todas las citas.
+async function agregarDetalle(citas: Cita[]): Promise<void> {
+  if (citas.length === 0) {
+    return;
+  }
+
+  const ids: number[] = [];
+  for (const cita of citas) {
+    ids.push(cita.id);
+  }
+
+  const [filas] = await pool.query<FilaServicioDeCita[]>(
+    "SELECT cs.cita_id, cs.servicio_id, s.nombre, s.minutos, cs.precio_aplicado " +
+      "FROM cita_servicios cs JOIN servicios s ON s.id = cs.servicio_id " +
+      "WHERE cs.cita_id IN (?) ORDER BY s.tipo = 'extra', cs.precio_aplicado DESC, s.nombre",
+    [ids]
+  );
+
+  for (const cita of citas) {
+    const lista: ServicioDeCita[] = [];
+    let total = 0;
+    let minutos = 0;
+
+    for (const fila of filas) {
+      if (fila.cita_id === cita.id) {
+        const precio = Number(fila.precio_aplicado);
+        lista.push({ id: fila.servicio_id, nombre: fila.nombre, precio: precio, minutos: fila.minutos });
+        total = total + precio;
+        minutos = minutos + fila.minutos;
+      }
+    }
+
+    cita.servicios = lista;
+    cita.total = total;
+    cita.minutos = minutos;
+  }
 }
 
 export async function obtenerTodas(filtros: {
@@ -79,6 +129,7 @@ export async function obtenerTodas(filtros: {
   for (const fila of filas) {
     citas.push(convertirFila(fila));
   }
+  await agregarDetalle(citas);
   return citas;
 }
 
@@ -91,7 +142,9 @@ export async function obtenerPorId(id: number): Promise<Cita | null> {
   if (filas.length === 0) {
     return null;
   }
-  return convertirFila(filas[0]);
+  const cita = convertirFila(filas[0]);
+  await agregarDetalle([cita]);
+  return cita;
 }
 
 // Regla 1: un horario está ocupado si hay una cita vigente en esa fecha y hora.

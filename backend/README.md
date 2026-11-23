@@ -7,7 +7,7 @@ Incluye registro, inicio de sesión y dos roles: **cliente** (app móvil) y **en
 
 ```
 backend/
-├── sql/esquema.sql          tablas y servicios de ejemplo
+├── sql/                     esquema.sql, migracion_servicios.sql y datos_prueba_citas.sql
 ├── src/
 │   ├── config/              conexión a la base de datos
 │   ├── controllers/         reciben la petición y responden
@@ -52,7 +52,10 @@ La contraseña se guarda cifrada (bcrypt). El rol de una cuenta nueva siempre es
 | POST | /api/auth/registro | Todos | Crear cuenta de cliente |
 | POST | /api/auth/iniciar-sesion | Todos | Iniciar sesión |
 | GET | /api/auth/yo | Con sesión | Datos de mi cuenta |
-| GET | /api/servicios | Todos | Catálogo de servicios |
+| GET | /api/servicios | Todos | Catálogo de servicios activos (paquetes y sueltos) |
+| POST | /api/servicios | Encargado | Crear servicio. 201; 400 datos inválidos; 409 nombre repetido |
+| PUT | /api/servicios/:id | Encargado | Editar servicio. 200; 400; 404 no existe; 409 nombre repetido |
+| DELETE | /api/servicios/:id | Encargado | Quitar servicio (se desactiva, las citas anteriores lo conservan). 200; 404 |
 | GET | /api/vehiculos | Cliente | Mis vehículos |
 | POST | /api/vehiculos | Cliente | Agregar un vehículo |
 | GET | /api/citas?fecha=&estado= | Con sesión | Listar citas (cada rol ve lo suyo) |
@@ -64,7 +67,7 @@ La contraseña se guarda cifrada (bcrypt). El rol de una cuenta nueva siempre es
 
 ## Cómo ejecutarlo (cuando la base de datos esté lista)
 
-1. Crear las tablas con `sql/esquema.sql`.
+1. Crear las tablas con `sql/esquema.sql` (y, si quieres citas de ejemplo, `sql/datos_prueba_citas.sql`).
 2. Copiar `.env.example` como `.env` y llenar los datos (incluida `JWT_SECRET`).
 3. Instalar y correr:
 
@@ -80,6 +83,5 @@ Pruebas: `npm test` (no necesitan la base de datos).
 ## Pendiente
 
 - Horario del negocio, días no laborables y número de bahías (reglas de disponibilidad).
-- Administración de servicios y precios por el encargado.
 - Notificaciones push al teléfono (hoy se guardan en la base de datos).
 - Evitar empalmes cuando dos personas reservan al mismo tiempo (hoy se revisa antes de guardar).

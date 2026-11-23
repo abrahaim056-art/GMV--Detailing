@@ -4,12 +4,13 @@ import CampoTexto from "../components/CampoTexto";
 import Boton from "../components/Boton";
 import Mensaje from "../components/Mensaje";
 import Logo from "../components/Logo";
+import { cerrarSesion, iniciarSesion } from "../services/authApi";
  
 interface LoginProps {
   onIngresar: () => void;
 }
  
-// Credenciales de demostración. No hay autenticación real en esta entrega.
+// Cuenta de prueba: se crea con  npm run crear-encargado -- "Administrador GMV" admin@gmv.com 1234
 const CORREO_DEMO = "admin@gmv.com";
 const CONTRASENA_DEMO = "1234";
  
@@ -22,14 +23,14 @@ function Login({ onIngresar }: LoginProps) {
   const [errorGeneral, setErrorGeneral] = useState("");
   const [cargando, setCargando] = useState(false);
  
-  function manejarEnvio(evento: FormEvent<HTMLFormElement>) {
+  async function manejarEnvio(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     setErrorCorreo("");
     setErrorContrasena("");
     setErrorGeneral("");
- 
+
     let hayErrores = false;
- 
+
     if (correo.trim() === "") {
       setErrorCorreo("Escribe tu correo.");
       hayErrores = true;
@@ -41,21 +42,31 @@ function Login({ onIngresar }: LoginProps) {
     if (hayErrores) {
       return;
     }
- 
-    // Se simula una espera de red de menos de un segundo.
+
+    // Se inicia sesión en la API (POST /api/auth/iniciar-sesion).
     setCargando(true);
-    setTimeout(() => {
-      setCargando(false);
- 
-      if (correo === CORREO_DEMO && contrasena === CONTRASENA_DEMO) {
-        onIngresar();
-        navigate("/dashboard");
-      } else {
-        setErrorGeneral("El correo o la contraseña no son correctos.");
+    try {
+      const usuario = await iniciarSesion(correo.trim(), contrasena);
+
+      if (usuario.rol !== "encargado") {
+        cerrarSesion();
+        setErrorGeneral("Esta cuenta no tiene acceso al panel del encargado.");
+        setCargando(false);
+        return;
       }
-    }, 700);
+
+      onIngresar();
+      navigate("/dashboard");
+    } catch (error) {
+      setCargando(false);
+      if (error instanceof Error) {
+        setErrorGeneral(error.message);
+      } else {
+        setErrorGeneral("No se pudo iniciar sesión.");
+      }
+    }
   }
- 
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gmv-negro px-4 py-10">
       <div className="mb-6 flex flex-col items-center text-white">

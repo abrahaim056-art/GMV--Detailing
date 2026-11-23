@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Cita } from "../types";
 import TarjetaCita from "../components/TarjetaCita";
@@ -30,18 +30,8 @@ function normalizar(texto: string): string {
 }
 
 function Agenda({ citas }: AgendaProps) {
-  const [cargando, setCargando] = useState(true);
   const [filtroEstado, setFiltroEstado] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
- 
-  // Carga simulada: en el futuro aquí se llamará a la API.
-  useEffect(() => {
-    const temporizador = setTimeout(() => {
-      setCargando(false);
-    }, 800);
- 
-    return () => clearTimeout(temporizador);
-  }, []);
  
   const citasFiltradas = citas.filter((cita) => {
     const coincideEstado = filtroEstado === "Todos" || cita.estado === filtroEstado;
@@ -105,13 +95,7 @@ function Agenda({ citas }: AgendaProps) {
         </div>
       </form>
  
-      {cargando && (
-        <p role="status" className="p-4 text-sm text-gmv-gris">
-          Cargando citas...
-        </p>
-      )}
- 
-      {!cargando && citasFiltradas.length === 0 && (
+      {citasFiltradas.length === 0 && (
         <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-gray-400 p-4">
           <p className="text-sm text-gmv-gris">
             No hay citas que coincidan con tu búsqueda.
@@ -122,7 +106,7 @@ function Agenda({ citas }: AgendaProps) {
         </div>
       )}
  
-      {!cargando && citasFiltradas.length > 0 && (
+      {citasFiltradas.length > 0 && (
         <>
           <p className="text-sm text-gmv-gris" aria-live="polite">
             Mostrando {citasFiltradas.length} de {citas.length} citas.

@@ -21,7 +21,7 @@ Esto provoca:
 - Turnos perdidos por clientes que no se presentan ni avisan.
 - Clientes que no saben cómo va el lavado de su vehículo.
 
-**Solución de esta entrega:** un panel web administrativo para el encargado del negocio, donde puede ver la agenda, registrar citas y cambiar el estado de cada vehículo. En esta etapa todo funciona con datos ficticios y estado local (sin base de datos, API ni autenticación real).
+**Solución de esta entrega:** un panel web administrativo para el encargado del negocio, donde puede ver la agenda, registrar citas y cambiar el estado de cada vehículo. El panel está conectado a la API del backend y a una base de datos MySQL: el inicio de sesión, los servicios, las citas y sus cambios de estado se guardan en la base de datos.
 
 ---
 
@@ -200,33 +200,39 @@ Abrir la dirección que muestra la terminal (normalmente `http://localhost:5173`
 | 768 px | ☐ | |
 | 1280 px | ☐ | |
 
-## 10. Integración futura: API, base de datos SQL y app móvil
-
-> Esta sección es teórica. No se implementa en esta entrega.
-
-El proyecto completo se pensó como tres partes que comparten los mismos datos:
+## 10. Arquitectura e integración
 
 ```
-App móvil del cliente (Dart)  ──┐
-                                ├──>  API REST  ──>  Base de datos SQL
-Panel web del encargado (React) ┘
+React (panel web)  ──>  API Express  ──>  controlador  ──>  repositorio  ──>  MySQL
+      ▲                                                                         │
+      └──────────────────────────── respuesta JSON ◄────────────────────────────┘
 ```
 
-- **Base de datos SQL:** guardará clientes, vehículos, servicios, citas y estados. Es la fuente única de verdad.
-- **API REST:** será la única forma de acceder a los datos. Ahí vivirán las reglas de negocio definitivas (por ejemplo, evitar que dos personas reserven el mismo horario).
-- **App móvil del cliente:** se desarrollará más adelante en Dart con otro docente. Permitirá agendar, ver el estado del vehículo y recibir notificaciones.
-- **Panel web del encargado:** es lo que contiene este repositorio.
+- **Base de datos MySQL:** guarda usuarios, vehículos, servicios, citas, historial de estados y notificaciones. Es la fuente única de verdad. El esquema está en `backend/sql/`.
+- **API REST (`backend/`):** única forma de acceder a los datos. Ahí viven las reglas de negocio (horario ocupado, flujo de estados, validaciones). Ver la tabla de endpoints en `backend/README.md`.
+- **Panel web (`src/`):** consume la API con `src/services/` (`apiBase.ts`, `authApi.ts`, `citasApi.ts`, `serviciosApi.ts`). `App.tsx` carga los datos al iniciar sesión y las páginas muestran los estados de carga, vacío, éxito y error.
+- **App móvil (`movil/`):** consulta la misma API y la misma base de datos.
 
-### Cómo se preparó este frontend para esa conexión
+### Cómo ejecutar todo
 
-- Los tipos de `src/types.ts` (`Cita`, `Servicio`, `EstadoCita`) describen la forma de los datos que devolverá la API.
-- Los datos ficticios están en `src/data/`, separados de las pantallas. Al conectar la API se sustituirán por peticiones.
-- Las funciones `cambiarEstado` y `agregarCita` están en `App.tsx`; ahí se reemplazarán por llamadas a la API.
-- La carga simulada de la agenda ya contempla la espera de una petición real.
-- El inicio de sesión de demostración se sustituirá por la autenticación del servidor.
+Requisitos: Node.js 18 o superior y MySQL 8.
 
-## 11. Pendientes por confirmar con el negocio
+1. **Base de datos.** En MySQL Workbench crea la base `gmv_detailing` y ejecuta `backend/sql/esquema.sql`. Si quieres citas de ejemplo para hoy, ejecuta también `backend/sql/datos_prueba_citas.sql`. (Si ya tenías la base de una versión anterior, ejecuta una sola vez `backend/sql/migracion_servicios.sql`.)
+2. **Backend** (puerto 3000):
+   ```bash
+   cd backend
+   cp .env.example .env      # llena DB_PASSWORD y JWT_SECRET
+   npm install
+   npm run crear-encargado -- "Administrador GMV" admin@gmv.com 1234
+   npm run dev
+   ```
+3. **Panel web** (puerto 5173), en otra terminal desde la raíz del proyecto:
+   ```bash
+   npm install
+   npm run dev
+   ```
+4. Abre `http://localhost:5173` e inicia sesión con la cuenta de prueba `admin@gmv.com` / `1234`.
 
-- Confirmar cuántas bahías o lugares de lavado hay (el prototipo asume 1 cita por horario).
-- Confirmar duración y precios reales por servicio y categoría de vehículo.
-- Confirmar horario de atención, días no laborables y tolerancia antes de marcar "No se presentó".
+**CORS:** la API acepta los orígenes de `CORS_ORIGIN` en `backend/.env` (por defecto `http://localhost:5173`). Si la variable no existe, acepta cualquiera.
+
+**Pruebas del backend:** `cd backend && npm test` (no necesitan la base de datos).

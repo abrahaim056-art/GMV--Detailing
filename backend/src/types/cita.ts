@@ -7,7 +7,31 @@ export type EstadoCita =
   | "No se presentó"
   | "Cancelado";
 
+// "paquete" = Básico, Premium, Ejecutivo. "extra" = servicio suelto que se suma
+// a un paquete o se pide solo (aspirado, pintado, etc.).
+export type TipoServicio = "paquete" | "extra";
+
 export interface Servicio {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  minutos: number;
+  tipo: TipoServicio;
+  activo: boolean;
+}
+
+// Datos que manda el encargado para crear o editar un servicio.
+export interface DatosServicio {
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  minutos: number;
+  tipo: TipoServicio;
+}
+
+// Un servicio dentro de una cita, con el precio que se cobró ese día.
+export interface ServicioDeCita {
   id: string;
   nombre: string;
   precio: number;
@@ -24,6 +48,9 @@ export interface Cita {
   vehiculo: string;
   categoria: string;
   serviciosIds: string[];
+  servicios: ServicioDeCita[];
+  total: number; // suma de los precios cobrados
+  minutos: number; // suma del tiempo aproximado
   fecha: string; // AAAA-MM-DD
   hora: string; // HH:MM
   estado: EstadoCita;

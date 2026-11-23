@@ -1,5 +1,5 @@
 import { Cita } from "../types";
-import { obtenerNombresServicios } from "../data/servicios";
+import { nombresDeCita } from "../data/servicios";
 import { formatearFecha } from "../data/citas";
 import EtiquetaEstado from "./EtiquetaEstado";
 import EnlaceDorado from "./EnlaceDorado";
@@ -25,7 +25,7 @@ function Dato({ titulo, valor }: DatoProps) {
  
 function TarjetaCita({ cita, fila = false }: TarjetaCitaProps) {
   const fechaHora = formatearFecha(cita.fecha) + " · " + cita.hora;
-  const servicios = obtenerNombresServicios(cita.serviciosIds);
+  const servicios = nombresDeCita(cita);
  
   const enlace = (
     <EnlaceDorado
