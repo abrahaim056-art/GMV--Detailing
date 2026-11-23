@@ -61,6 +61,7 @@ function Layout({ sesion, onSalir }: LayoutProps) {
             <NavLink to="/citas/nueva" className={({ isActive }) => claseEnlace(isActive)}>
               Nueva cita
             </NavLink>
+            
             <button
               type="button"
               onClick={cerrarSesion}
