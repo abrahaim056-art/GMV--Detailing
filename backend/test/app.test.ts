@@ -5,6 +5,7 @@ import { obtenerEstadosPermitidos, validarNuevaCita } from "../src/utils/reglasC
 import { validarRegistro } from "../src/utils/reglasUsuarios";
 import { validarServicio } from "../src/utils/reglasServicios";
 import { crearToken } from "../src/utils/token";
+import { validarCliente } from "../src/utils/reglasClientes";
 
 describe("API", () => {
   it("responde ok en /api/salud", async () => {
@@ -117,4 +118,52 @@ describe("Servicios", () => {
     const errores = validarServicio({ nombre: "Aspirado", precio: 0, minutos: 2.5, tipo: "otro" });
     expect(errores.length).toBe(3);
   });
+  
+describe("Clientes", () => {
+  it("ver los clientes pide sesión", async () => {
+    const respuesta = await request(app).get("/api/clientes");
+    expect(respuesta.status).toBe(401);
+  });
+
+  it("un cliente no puede registrar clientes (403)", async () => {
+    process.env.JWT_SECRET = "clave-de-prueba";
+    const token = crearToken({ id: 1, rol: "cliente" });
+    const respuesta = await request(app)
+      .post("/api/clientes")
+      .set("Authorization", "Bearer " + token)
+      .send({ nombre: "Ana", telefono: "998 111 2233" });
+    expect(respuesta.status).toBe(403);
+  });
+
+  it("el encargado recibe 400 si faltan datos", async () => {
+    process.env.JWT_SECRET = "clave-de-prueba";
+    const token = crearToken({ id: 1, rol: "encargado" });
+    const respuesta = await request(app)
+      .post("/api/clientes")
+      .set("Authorization", "Bearer " + token)
+      .send({ nombre: "" });
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.errores.length).toBeGreaterThan(0);
+  });
+
+  it("validarCliente acepta nombre y teléfono sin correo", () => {
+    const errores = validarCliente({ nombre: "Mariana López", telefono: "998 222 3344", correo: "" });
+    expect(errores.length).toBe(0);
+  });
+
+  it("validarCliente acepta nombre y correo sin teléfono", () => {
+    const errores = validarCliente({ nombre: "Braulio", telefono: "", correo: "prueba1@gmail.com" });
+    expect(errores.length).toBe(0);
+  });
+
+  it("validarCliente pide teléfono o correo", () => {
+    const errores = validarCliente({ nombre: "Ana", telefono: "", correo: "" });
+    expect(errores.length).toBe(1);
+  });
+
+  it("validarCliente rechaza correo y teléfono inválidos", () => {
+    const errores = validarCliente({ nombre: "Ana", telefono: "abc", correo: "sin-arroba" });
+    expect(errores.length).toBe(2);
+  });
+});
 });

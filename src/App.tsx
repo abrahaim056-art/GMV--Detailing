@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { Cita, DatosServicio, EstadoCita, Servicio } from "./types";
+import { Cita, Cliente, DatosCliente, DatosServicio, EstadoCita, Servicio } from "./types";
 import Layout from "./components/Layout";
 import ConDatos, { EstadoCarga } from "./components/ConDatos";
 import Login from "./pages/Login";
@@ -9,6 +9,7 @@ import Agenda from "./pages/Agenda";
 import NuevaCita from "./pages/NuevaCita";
 import DetalleCita from "./pages/DetalleCita";
 import ServicioExtraPagina from "./pages/Servicio_extra";
+import ClientesPagina from "./pages/Clientes";
 import { cerrarSesion } from "./services/authApi";
 import {
   DatosNuevaCita,
@@ -16,6 +17,7 @@ import {
   crearCita,
   obtenerCitas,
 } from "./services/citasApi";
+import { crearCliente, obtenerClientes } from "./services/clientesApi";
 import {
   crearServicio,
   editarServicio,
@@ -28,17 +30,23 @@ function App() {
   const [sesion, setSesion] = useState(false);
   const [citas, setCitas] = useState<Cita[]>([]);
   const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [estadoCarga, setEstadoCarga] = useState<EstadoCarga>("cargando");
   const [mensajeError, setMensajeError] = useState("");
 
-  // Carga inicial (y al reintentar): citas y servicios desde la API.
+  // Carga inicial (y al reintentar): citas, servicios y clientes desde la API.
   async function cargarDatos() {
     setEstadoCarga("cargando");
     setMensajeError("");
     try {
-      const [citasApi, serviciosApi] = await Promise.all([obtenerCitas(), obtenerServicios()]);
+      const [citasApi, serviciosApi, clientesApi] = await Promise.all([
+        obtenerCitas(),
+        obtenerServicios(),
+        obtenerClientes(),
+      ]);
       setCitas(citasApi);
       setServicios(serviciosApi);
+      setClientes(clientesApi);
       setEstadoCarga("listo");
     } catch (error) {
       if (error instanceof Error) {
@@ -60,6 +68,7 @@ function App() {
     cerrarSesion();
     setCitas([]);
     setServicios([]);
+    setClientes([]);
     setEstadoCarga("cargando");
     setSesion(false);
   }
@@ -90,6 +99,11 @@ function App() {
     setServicios(await obtenerServicios());
   }
 
+  async function agregarCliente(datos: DatosCliente) {
+    await crearCliente(datos);
+    setClientes(await obtenerClientes());
+  }
+
   // Envuelve cada página con los estados de carga y error.
   function conDatos(pagina: JSX.Element) {
     return (
@@ -115,6 +129,10 @@ function App() {
         <Route
           path="/citas/:id"
           element={conDatos(<DetalleCita citas={citas} onCambiarEstado={cambiarEstado} />)}
+        />
+        <Route
+          path="/clientes"
+          element={conDatos(<ClientesPagina clientes={clientes} onAgregar={agregarCliente} />)}
         />
         <Route
           path="/servicios"

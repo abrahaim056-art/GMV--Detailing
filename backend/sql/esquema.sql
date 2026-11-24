@@ -14,6 +14,20 @@ CREATE TABLE IF NOT EXISTS usuarios (
   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Directorio de clientes que registra el encargado en el panel web.
+-- usuario_id queda vacío si el cliente no tiene cuenta en la app móvil.
+-- Al quitar un cliente se pone activo = FALSE en vez de borrarlo.
+CREATE TABLE IF NOT EXISTS clientes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  telefono VARCHAR(30) NULL,
+  correo VARCHAR(100) NULL,
+  usuario_id INT NULL,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
 -- Vehículos de cada cliente.
 CREATE TABLE IF NOT EXISTS vehiculos (
   id INT AUTO_INCREMENT PRIMARY KEY,
