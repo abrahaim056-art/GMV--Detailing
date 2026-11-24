@@ -17,7 +17,12 @@ import {
   crearCita,
   obtenerCitas,
 } from "./services/citasApi";
-import { crearCliente, obtenerClientes } from "./services/clientesApi";
+import {
+  crearCliente,
+  editarCliente,
+  eliminarCliente,
+  obtenerClientes,
+} from "./services/clientesApi";
 import {
   crearServicio,
   editarServicio,
@@ -104,6 +109,16 @@ function App() {
     setClientes(await obtenerClientes());
   }
 
+  async function modificarCliente(id: number, datos: DatosCliente) {
+    await editarCliente(id, datos);
+    setClientes(await obtenerClientes());
+  }
+
+  async function quitarCliente(id: number) {
+    await eliminarCliente(id);
+    setClientes(await obtenerClientes());
+  }
+
   // Envuelve cada página con los estados de carga y error.
   function conDatos(pagina: JSX.Element) {
     return (
@@ -132,7 +147,14 @@ function App() {
         />
         <Route
           path="/clientes"
-          element={conDatos(<ClientesPagina clientes={clientes} onAgregar={agregarCliente} />)}
+          element={conDatos(
+            <ClientesPagina
+              clientes={clientes}
+              onAgregar={agregarCliente}
+              onEditar={modificarCliente}
+              onEliminar={quitarCliente}
+            />
+          )}
         />
         <Route
           path="/servicios"

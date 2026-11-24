@@ -52,25 +52,26 @@ export async function obtenerPorId(id: number): Promise<Cliente | null> {
 }
 
 // ¿Ya hay un cliente activo con ese correo? (sin importar mayúsculas)
-export async function existeCorreo(correo: string): Promise<boolean> {
+// Al editar se pasa el id del propio cliente para que no cuente como repetido.
+export async function existeCorreo(correo: string, idIgnorar?: number): Promise<boolean> {
   if (correo === "") {
     return false;
   }
   const [filas] = await pool.query<RowDataPacket[]>(
-    "SELECT COUNT(*) AS total FROM clientes WHERE activo = TRUE AND LOWER(correo) = LOWER(?)",
-    [correo]
+    "SELECT COUNT(*) AS total FROM clientes WHERE activo = TRUE AND LOWER(correo) = LOWER(?) AND id <> ?",
+    [correo, idIgnorar || 0]
   );
   return filas[0].total > 0;
 }
 
 // ¿Ya hay un cliente activo con ese teléfono?
-export async function existeTelefono(telefono: string): Promise<boolean> {
+export async function existeTelefono(telefono: string, idIgnorar?: number): Promise<boolean> {
   if (telefono === "") {
     return false;
   }
   const [filas] = await pool.query<RowDataPacket[]>(
-    "SELECT COUNT(*) AS total FROM clientes WHERE activo = TRUE AND telefono = ?",
-    [telefono]
+    "SELECT COUNT(*) AS total FROM clientes WHERE activo = TRUE AND telefono = ? AND id <> ?",
+    [telefono, idIgnorar || 0]
   );
   return filas[0].total > 0;
 }
@@ -87,4 +88,23 @@ export async function crear(datos: DatosCliente): Promise<Cliente> {
     throw new Error("No se pudo leer el cliente recién creado.");
   }
   return creado;
+}
+
+export async function actualizar(id: number, datos: DatosCliente): Promise<Cliente> {
+  await pool.query<ResultSetHeader>(
+    "UPDATE clientes SET nombre = ?, telefono = ?, correo = ? WHERE id = ?",
+    [datos.nombre, datos.telefono || null, datos.correo || null, id]
+  );
+
+  const actualizado = await obtenerPorId(id);
+  if (!actualizado) {
+    throw new Error("No se pudo leer el cliente actualizado.");
+  }
+  return actualizado;
+}
+
+// "Eliminar" un cliente lo desactiva en vez de borrarlo de la base de datos
+// (igual que los servicios). Las citas ya creadas guardan sus propios datos y no cambian.
+export async function desactivar(id: number): Promise<void> {
+  await pool.query("UPDATE clientes SET activo = FALSE WHERE id = ?", [id]);
 }

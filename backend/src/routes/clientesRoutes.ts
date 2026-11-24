@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { crearCliente, listarClientes } from "../controllers/clientesController";
+import {
+  actualizarCliente,
+  crearCliente,
+  eliminarCliente,
+  listarClientes,
+} from "../controllers/clientesController";
 import { requerirRol, requerirSesion } from "../middleware/autenticacion";
 
 const router = Router();
@@ -10,5 +15,7 @@ router.use(requerirRol("encargado"));
 
 router.get("/", listarClientes);
 router.post("/", crearCliente);
+router.put("/:id", actualizarCliente);
+router.delete("/:id", eliminarCliente);
 
 export default router;
